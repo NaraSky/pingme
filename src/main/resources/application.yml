@@ -1,0 +1,30 @@
+# application.yml 基础配置
+# Spring Boot 项目基本配置
+spring:
+  application:
+    name: pingme # 应用名称
+  profiles:
+    active: dev # 激活的配置文件
+  devtools:
+    restart:
+      enabled: true # 启用开发工具自动重启功能
+      additional-paths: src/main/java # 监控额外的代码变更路径
+  servlet:
+    multipart:
+      max-file-size: 100MB # 上传文件最大大小
+      max-request-size: 100MB # 多部分请求最大大小
+    tomcat:
+      max-http-form-post-size: 100MB # HTTP表单POST最大大小
+      max-connections: 10000 # Tomcat最大连接数
+      max-threads: 500 # Tomcat最大线程数
+  mvc:
+    async:
+      request-timeout: -1 # 异步请求超时时间（-1表示永不超时）
+    favicon:
+      enabled:false # 禁用网站图标
+  thymeleaf:
+    prefix: classpath:/templates/ # Thymeleaf模板前缀路径
+    suffix: .html # Thymeleaf模板后缀
+    mode: HTML5 # Thymeleaf模板模式
+    encoding: UTF-8 # 模板编码格式
+    cache: false # 禁用模板缓存
