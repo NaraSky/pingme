@@ -36,6 +36,7 @@
         <mysql-version>8.4.0</mysql-version>
         <elasticsearch.version>8.13.4</elasticsearch.version>
         <lombok.version>1.18.32</lombok.version>
+        <swagger.version>2.9.2</swagger.version>
     </properties>
 
     <!-- 父级依赖配置 -->
@@ -302,6 +303,24 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>4.0.1</version>
+        </dependency>
+
+        <!-- swagger相关-->
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger2</artifactId>
+            <version>${swagger.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger-ui</artifactId>
+            <version>${swagger.version}</version>
         </dependency>
     </dependencies>
 
