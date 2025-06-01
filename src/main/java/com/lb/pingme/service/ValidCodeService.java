@@ -18,6 +18,7 @@ public class ValidCodeService {
         }
         // 如果用户输入的验证码与会话中的验证码一致，移除会话中的验证码
         if (picCheckCode.equals(sessionService.get(WebConstant.PIC_VALID_CODE_SESSION_KEY))) {
+            // 验证成功后立即删除验证码，防止重复使用
             sessionService.remove(WebConstant.PIC_VALID_CODE_SESSION_KEY);
             return;
         }
