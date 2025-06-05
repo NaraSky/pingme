@@ -9,13 +9,13 @@ import com.lb.pingme.common.util.AvatarUtil;
 import com.lb.pingme.config.annotation.SafeClick;
 import com.lb.pingme.config.annotation.ValidateLogin;
 import com.lb.pingme.config.annotation.ValidatePermission;
-import com.lb.pingme.domain.vo.request.CreateGroupRequestVO;
-import com.lb.pingme.domain.vo.request.CreatePublicAccountRequestVO;
-import com.lb.pingme.domain.vo.request.CreateRobotRequestVO;
-import com.lb.pingme.domain.vo.request.UserRegistryInfoRequestVO;
+import com.lb.pingme.domain.vo.request.*;
+import com.lb.pingme.service.SlideVerificationService;
 import com.lb.pingme.service.UserService;
 import com.lb.pingme.service.ValidCodeService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,6 +30,9 @@ public class UserController {
 
     @Autowired
     private ValidCodeService validCodeService;
+
+    @Autowired
+    private SlideVerificationService slideVerificationService;
 
     @PostMapping("/registry")
     public APIResponseBean registry(@RequestBody UserRegistryInfoRequestVO requestVO) {
@@ -77,5 +80,19 @@ public class UserController {
         requestVO.setCreateUserId(userId);
         userService.createChatGroup(requestVO);
         return APIResponseBeanUtil.success("群组创建成功");
+    }
+
+    @PostMapping("/login")
+    public APIResponseBean login(@RequestBody UserLoginInfoRequestVO request) {
+        Assert.isTrue(request != null, "登录参数为空！");
+        String mobile = request.getMobile();
+        String password = request.getPassword();
+        String solidTokenId = request.getSolidTokenId();
+        Assert.isTrue(StringUtils.isNotBlank(mobile), "手机号为空！");
+        Assert.isTrue(StringUtils.isNotBlank(password), "密码为空！");
+        Assert.isTrue(StringUtils.isNotBlank(solidTokenId), "滑块验证失败！");
+        // 滑块验证
+        slideVerificationService.validateTokenResult(solidTokenId);
+        return APIResponseBeanUtil.success(userService.login(mobile, password));
     }
 }

@@ -1,19 +1,25 @@
 package com.lb.pingme.service;
 
+import com.lb.pingme.common.constants.CookieConstants;
 import com.lb.pingme.common.constants.WebConstant;
+import com.lb.pingme.common.enums.APIErrorCommonEnum;
 import com.lb.pingme.common.enums.RedisKeyEnum;
 import com.lb.pingme.common.enums.RoleCodeEnum;
 import com.lb.pingme.common.enums.UserStatusEnum;
 import com.lb.pingme.common.exception.BusinessException;
 import com.lb.pingme.common.util.*;
+import com.lb.pingme.domain.convert.UserEntryConvert;
 import com.lb.pingme.domain.vo.request.CreateGroupRequestVO;
 import com.lb.pingme.domain.vo.request.CreatePublicAccountRequestVO;
 import com.lb.pingme.domain.vo.request.CreateRobotRequestVO;
+import com.lb.pingme.domain.vo.response.UserBaseResponseInfoVO;
 import com.lb.pingme.repository.dao.IGroupUserDAO;
 import com.lb.pingme.repository.dao.IUserDAO;
 import com.lb.pingme.repository.entity.GroupUserEntity;
 import com.lb.pingme.repository.entity.UserEntity;
 import com.lb.pingme.service.publicaccount.PublicAccountService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +38,9 @@ public class UserService {
 
     @Autowired
     private IUserDAO userDAO;
+
+    @Autowired
+    private HttpServletResponse response;
 
     @Autowired
     private RedisService redisService;
@@ -370,5 +379,44 @@ public class UserService {
         // 批量写入Redis，设置过期时间避免内存泄漏
         redisService.zadd(key, typedTupleSet, RedisKeyEnum.GROUP_USER_ID_LIST_CACHE.getExpireTime());
         return groupUserEntities.stream().map(GroupUserEntity::getUserId).collect(Collectors.toSet());
+    }
+
+    public UserBaseResponseInfoVO login(String mobile, String password) {
+        if (!hasUserInfo(mobile)) {
+            throw new BusinessException(APIErrorCommonEnum.USER_NOT_FOUND);
+        }
+        UserEntity userEntity = userDAO.findByMobileAndPassword(mobile, md5Pwd(password));
+        if (userEntity == null) {
+            throw new BusinessException("密码验证失败");
+        }
+        if (userEntity.getRoleCode().equals(RoleCodeEnum.BLACK.getCode())) {
+            throw new BusinessException("账号异常！联系管理员解封");
+        }
+        UserBaseResponseInfoVO user = userLogin(userEntity);
+        return user;
+    }
+
+    private UserBaseResponseInfoVO userLogin(UserEntity userEntity) {
+        // 创建用户登录会话数据
+        this.createLoginSession(userEntity.getUserId());
+        UserBaseResponseInfoVO user = UserEntryConvert.convertBaseVo(userEntity);
+        return user;
+    }
+
+    private void createLoginSession(String userId) {
+        String sessionId = MD5Utils.md5(userId);
+        // sessionId：UserId缓存，用的String数据结构存储，有效期3天
+        String sessionKey = RedisKeyEnum.USER_SESSION_PREFIX.getKey(sessionId);
+        redisService.set(sessionKey, userId, RedisKeyEnum.USER_SESSION_PREFIX.getExpireTime());
+        // 种浏览器Cookie
+        Cookie cookie = new Cookie(CookieConstants.C_U_USER_COOKIE_KEY, sessionId);
+        cookie.setPath("/");
+        cookie.setMaxAge(CookieConstants.COOKIE_OUT_TIME);
+        response.addCookie(cookie);
+    }
+
+    public String getUserIdBySessionId(String sessionId) {
+        String sessionKey = RedisKeyEnum.USER_SESSION_PREFIX.getKey(sessionId);
+        return redisService.get(sessionKey);
     }
 }
