@@ -419,4 +419,29 @@ public class UserService {
         String sessionKey = RedisKeyEnum.USER_SESSION_PREFIX.getKey(sessionId);
         return redisService.get(sessionKey);
     }
+
+    public UserBaseResponseInfoVO getUserInfoByUserId(String userId) {
+        return getUserBaseInfoByUserId(userId);
+    }
+
+
+    public UserBaseResponseInfoVO getUserBaseInfoByUserId(String userId) {
+        if (StringUtils.isBlank(userId)) {
+            return null;
+        }
+        return getUserBaseInfoByUserIdFromCache(userId);
+    }
+
+    private UserBaseResponseInfoVO getUserBaseInfoByUserIdFromCache(String userId) {
+        if (userId == null) {
+            return null;
+        }
+        UserEntity entity = this.refreshAndGetUserEntityFromCache(userId);
+        UserBaseResponseInfoVO userBaseResponseInfoVO = UserEntryConvert.convertBaseVo(entity);
+        if (userBaseResponseInfoVO == null) {
+            return null;
+        }
+        return userBaseResponseInfoVO;
+    }
+
 }
